@@ -1,0 +1,10 @@
+[project]
+name = "test-claude-agent-sdk"
+version = "0.1.0"
+description = "Temporal workflow with a step that runs the Claude Agent SDK"
+requires-python = ">=3.10"
+dependencies = [
+    "temporalio>=1.8",
+    "claude-agent-sdk>=0.1",
+    "httpx>=0.27",
+]
