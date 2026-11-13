@@ -1,0 +1,321 @@
+{
+  "info": {
+    "name": "Workflow API (address verification)",
+    "description": "Run the API with: WORKFLOW_API_KEY=... uv run uvicorn api:app --port 8000. Set the apiKey variable to the same value. Start verification stores workflowId for the other requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "apiKey",
+      "value": "change-me"
+    },
+    {
+      "key": "companyMarker",
+      "value": "mtagnostic1"
+    },
+    {
+      "key": "customerId",
+      "value": "12345"
+    },
+    {
+      "key": "workflowId",
+      "value": "AddressVerificationWorkflow-mtagnostic1-12345"
+    }
+  ],
+  "item": [
+    {
+      "name": "Address verification",
+      "item": [
+        {
+          "name": "Start verification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/address-verifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "address-verifications"
+              ]
+            },
+            "description": "Starts AddressVerificationWorkflow-<companyMarker>-<customerId>. 409 if one is already running for the customer.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company_marker\": \"{{companyMarker}}\",\n  \"customer_id\": {{customerId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('workflowId', pm.response.json().workflow_id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/address-verifications/{{workflowId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "address-verifications",
+                "{{workflowId}}",
+                "status"
+              ]
+            },
+            "description": "Lifecycle (RUNNING/COMPLETED...), current step, last error, address, Claude's verdict; `result` once finished. No API key needed."
+          }
+        },
+        {
+          "name": "Submit address",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/address-verifications/{{workflowId}}/address",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "address-verifications",
+                "{{workflowId}}",
+                "address"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": \"Av. Corrientes 1000, Buenos Aires, Argentina\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Upload document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/address-verifications/{{workflowId}}/document",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "address-verifications",
+                "{{workflowId}}",
+                "document"
+              ]
+            },
+            "description": "Pick a PDF/image (max 10MB) in the file field.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Review (manual override)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/address-verifications/{{workflowId}}/review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "address-verifications",
+                "{{workflowId}}",
+                "review"
+              ]
+            },
+            "description": "Normally the decision is made by closing the Jira ticket; this overrides it.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"approved\": true,\n  \"reviewer\": \"Your Name\",\n  \"notes\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Workflow console (read-only)",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Workflow types",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workflow-types",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workflow-types"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "List workflows",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workflows?type=AddressVerificationWorkflow&status=Running&limit=50",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workflows"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "AddressVerificationWorkflow",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "Running",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Get workflow",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workflows/{{workflowId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workflows",
+                "{{workflowId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Workflow events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workflows/{{workflowId}}/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workflows",
+                "{{workflowId}}",
+                "events"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    }
+  ]
+}

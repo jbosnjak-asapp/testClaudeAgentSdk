@@ -1,4 +1,5 @@
-"""Read-only HTTP API over Temporal for a generic workflow UI.
+"""HTTP API over Temporal: a read-only part for a generic workflow UI, plus the curl-able
+address verification endpoints (address_api.py, protected by X-API-Key).
 
   uv run uvicorn api:app --port 8000     (binds 127.0.0.1 by default)
 
@@ -10,7 +11,11 @@ GET /workflows/{id}                       lifecycle status + `ui_state` (the UI 
                                           in workflow_ui.py) or, if the workflow doesn't
                                           implement it, an event `timeline` fallback
 
-No auth: keep it on localhost / behind an authenticated proxy. It only reads.
+/address-verifications/...                start, upload, review and check an address verification
+                                          (see address_api.py)
+
+The generic endpoints above have no auth and only read: keep the API on localhost / behind an
+authenticated proxy.
 """
 import os
 import re
@@ -24,6 +29,7 @@ from temporalio.api.enums.v1 import EventType
 from temporalio.client import Client
 from temporalio.service import RPCError, RPCStatusCode
 
+from address_api import router as address_router
 from workflow_events import compact_events, event_time_iso, pending_activity_rows
 from workflow_types import summarize_types
 from workflow_ui import UI_STATE_QUERY
@@ -43,8 +49,8 @@ _state: dict[str, Client] = {}
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI):
-    _state["client"] = await Client.connect(
+async def lifespan(app: FastAPI):
+    _state["client"] = app.state.client = await Client.connect(
         os.getenv("TEMPORAL_ADDRESS", "localhost:7233"),
         namespace=os.getenv("TEMPORAL_NAMESPACE", "default"),
     )
@@ -64,6 +70,9 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=["*"],
 )
+
+
+app.include_router(address_router)
 
 
 def _iso(dt) -> Optional[str]:
