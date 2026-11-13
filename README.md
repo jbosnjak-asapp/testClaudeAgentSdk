@@ -153,6 +153,29 @@ The tab calls the API directly from the browser, so the API enables CORS for `lo
 | `GET /workflows/{id}` | Lifecycle status plus `ui_state`; if the workflow doesn't implement the contract, an event `timeline` instead |
 | `GET /workflows/{id}/events` | The event history grouped into compact rows, plus pending activities |
 
+### Address verification over HTTP (instead of `address_cli.py`)
+
+The same actions as the CLI, as REST calls. The POSTs change workflows, so start the API with a key and send it in
+`X-API-Key` (without `WORKFLOW_API_KEY` they return 503). The status is readable without it.
+
+```bash
+export WORKFLOW_API_KEY=some-secret
+uv run uvicorn api:app --port 8000
+
+H="X-API-Key: $WORKFLOW_API_KEY"; B=http://localhost:8000/address-verifications
+ID=AddressVerificationWorkflow-mtagnostic1-12345
+curl -X POST $B -H "$H" -H 'Content-Type: application/json' -d '{"company_marker":"mtagnostic1","customer_id":12345}'
+curl -X POST $B/$ID/address  -H "$H" -H 'Content-Type: application/json' -d '{"address":"Av. Corrientes 1000, Buenos Aires"}'
+curl -X POST $B/$ID/document -H "$H" -F file=@./bill.pdf
+curl $B/$ID/status
+curl -X POST $B/$ID/review   -H "$H" -H 'Content-Type: application/json' -d '{"approved":true,"reviewer":"me"}'   # manual override
+```
+
+`/status` returns the lifecycle (`RUNNING`, `COMPLETED`...), the current `step`, `last_error`, the address, Claude's verdict
+and, once finished, `result`. Errors: 400 bad id, 401/503 key, 404 unknown or finished workflow, 409 already running,
+413 file over 10MB, 422 invalid input. Import `workflow-api.postman_collection.json` into Postman for all endpoints (set
+the `apiKey` variable; *Start verification* saves the `workflowId`).
+
 **To make any workflow show up with named steps**, follow the contract in `workflow_ui.py`: create a `UiTracker` with the
 ordered steps, call `begin` / `done` / `set_error` / `finish` at each transition, and expose it with
 `@workflow.query(name=UI_STATE_QUERY)`. See `address_workflow.py` for an example. Only ever add fields to the contract.
@@ -167,6 +190,7 @@ through the `temporal` CLI) with fake activities.
 uv run python test_jira.py              # Jira client against mocked HTTP
 uv run python test_verdict.py           # utility-bill / verdict rules
 uv run python test_address_workflow.py  # full workflow scenarios, id convention, compact events
+uv run python test_address_api.py       # the REST endpoints end to end
 ```
 
 ## Layout
@@ -179,7 +203,8 @@ uv run python test_address_workflow.py  # full workflow scenarios, id convention
 | `jira_client.py`, `jira_activities.py` | Jira approval ticket: create it, poll until closed |
 | `workflow_ui.py` | UI contract: steps, current step, pending input, data |
 | `workflow_events.py`, `workflow_types.py` | Compact event history and per-type summaries for the API |
-| `api.py` | The read-only Workflow API |
+| `api.py`, `address_api.py` | The Workflow API: read-only console endpoints, and the address verification REST endpoints |
+| `workflow-api.postman_collection.json` | Postman collection for all endpoints |
 | `agent_options.py` | Locked-down Claude agent options shared by all agent steps |
 | `test_*.py` | Tests (see above) |
 

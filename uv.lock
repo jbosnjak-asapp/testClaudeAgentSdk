@@ -1253,6 +1253,8 @@ dependencies = [
     { name = "claude-agent-sdk" },
     { name = "fastapi" },
     { name = "httpx" },
+    { name = "python-multipart", version = "0.0.32", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "python-multipart", version = "0.0.33", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "temporalio", version = "1.35.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "temporalio", version = "1.36.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "uvicorn" },
@@ -1263,6 +1265,7 @@ requires-dist = [
     { name = "claude-agent-sdk", specifier = ">=0.1" },
     { name = "fastapi", specifier = ">=0.110" },
     { name = "httpx", specifier = ">=0.27" },
+    { name = "python-multipart", specifier = ">=0.0.9" },
     { name = "temporalio", specifier = ">=1.8" },
     { name = "uvicorn", specifier = ">=0.29" },
 ]
