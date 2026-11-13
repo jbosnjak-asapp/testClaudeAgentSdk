@@ -3,3 +3,6 @@ lib
 .env
 uploads
 .idea
+__pycache__/
+*.py[cod]
+.venv
